@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Consultar Hóspedes</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .pagina-consulta {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+            box-sizing: border-box;
+        }
+
+        .card-consulta {
+            background-color: #001f3d;
+            border: 1px solid #1e90ff44;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 0 40px #1e90ff22;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .titulo-consulta {
+            background: linear-gradient(90deg, #7b2cff, #00c8ff);
+            color: white;
+            font-weight: bold;
+            font-size: 22px;
+            letter-spacing: 3px;
+            text-align: center;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .tabela {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .tabela thead tr {
+            background-color: #0a1f33;
+        }
+
+        .tabela th {
+            color: #00c8ff;
+            font-size: 13px;
+            letter-spacing: 2px;
+            padding: 16px 20px;
+            text-align: left;
+        }
+
+        .tabela td {
+            color: white;
+            padding: 14px 20px;
+            border-bottom: 1px solid #1e3a55;
+            font-size: 14px;
+        }
+
+        .tabela tbody tr:hover {
+            background-color: #012a4a;
+        }
+
+        .sem-registros {
+            color: #ffffff55;
+            text-align: center;
+            padding: 30px;
+            font-size: 14px;
+        }
+
+        .link-voltar {
+            display: block;
+            text-align: center;
+            color: #1e90ff;
+            text-decoration: none;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .link-voltar:hover {
+            text-decoration: underline;
+        }
+
+        .btn-editar {
+            background: none;
+            border: 1px solid #00c8ff;
+            color: #00c8ff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-right: 6px;
+        }
+
+        .btn-excluir {
+            background: none;
+            border: 1px solid #ff4444;
+            color: #ff4444;
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-imprimir {
+            background: none;
+            border: 1px solid #00ff99;
+            color: #00ff99;
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-right: 6px;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #000000aa;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .modal-overlay.ativo {
+            display: flex;
+        }
+
+        .modal {
+            background-color: #001f3d;
+            border: 1px solid #1e90ff44;
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 0 40px #1e90ff44;
+        }
+
+        .modal h2 {
+            color: white;
+            text-align: center;
+            margin-bottom: 24px;
+            letter-spacing: 2px;
+        }
+
+        .modal-campo {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 16px;
+        }
+
+        .modal-campo label {
+            color: #00c8ff;
+            font-weight: bold;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .modal-campo input {
+            height: 44px;
+            padding: 0 15px;
+            background-color: #17324d;
+            color: white;
+            border: 1px solid #35506d;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        .modal-campo input:focus {
+            outline: none;
+            border-color: #00c8ff;
+        }
+
+        .modal-botoes {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 24px;
+        }
+
+        .btn-salvar-edicao {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(90deg, #7b2cff, #1e90ff);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-cancelar {
+            padding: 12px 30px;
+            border: 1px solid #ffffff44;
+            border-radius: 50px;
+            background: none;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .ficha-impressao {
+            display: none;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            .ficha-impressao, .ficha-impressao * { visibility: visible; }
+            .ficha-impressao {
+                display: block;
+                position: absolute;
+                top: 0; left: 0;
+                width: 100%;
+                padding: 40px;
+                box-sizing: border-box;
+                font-family: Arial, sans-serif;
+                color: black;
+                background: white;
+            }
+            .ficha-impressao h2 {
+                text-align: center;
+                font-size: 24px;
+                margin-bottom: 10px;
+                border-bottom: 2px solid black;
+                padding-bottom: 10px;
+            }
+            .ficha-linha {
+                display: flex;
+                gap: 40px;
+                margin-bottom: 16px;
+            }
+            .ficha-item {
+                flex: 1;
+                border-bottom: 1px solid #aaa;
+                padding-bottom: 4px;
+            }
+            .ficha-item span {
+                font-size: 11px;
+                color: #555;
+                display: block;
+            }
+            .ficha-item strong {
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ficha-impressao" id="ficha-impressao">
+        <h2>Ficha de Hospedagem</h2>
+        <div class="ficha-linha">
+            <div class="ficha-item"><span>Nome completo</span><strong id="p-nome"></strong></div>
+        </div>
+        <div class="ficha-linha">
+            <div class="ficha-item"><span>Endereço</span><strong id="p-endereco"></strong></div>
+            <div class="ficha-item"><span>Número</span><strong id="p-numero"></strong></div>
+            <div class="ficha-item"><span>Complemento</span><strong id="p-complemento"></strong></div>
+        </div>
+        <div class="ficha-linha">
+            <div class="ficha-item"><span>Bairro</span><strong id="p-bairro"></strong></div>
+            <div class="ficha-item"><span>Cidade</span><strong id="p-cidade"></strong></div>
+            <div class="ficha-item"><span>Estado</span><strong id="p-estado"></strong></div>
+            <div class="ficha-item"><span>CEP</span><strong id="p-cep"></strong></div>
+        </div>
+        <div class="ficha-linha">
+            <div class="ficha-item"><span>E-mail</span><strong id="p-email"></strong></div>
+        </div>
+        <div class="ficha-linha">
+            <div class="ficha-item"><span>Tel. Particular</span><strong id="p-telParticular"></strong></div>
+            <div class="ficha-item"><span>Tel. Empresa</span><strong id="p-telEmpresa"></strong></div>
+            <div class="ficha-item"><span>Tel. Fixo</span><strong id="p-telFixo"></strong></div>
+        </div>
+        <div class="ficha-linha">
+            <div class="ficha-item"><span>CPF</span><strong id="p-cpf"></strong></div>
+            <div class="ficha-item"><span>CNPJ</span><strong id="p-cnpj"></strong></div>
+        </div>
+        <div class="ficha-linha">
+            <div class="ficha-item"><span>Data de entrada</span><strong id="p-entrada"></strong></div>
+            <div class="ficha-item"><span>Data de saída</span><strong id="p-saida"></strong></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+            <h2>EDITAR HÓSPEDE</h2>
+            <div class="modal-campo"><label>Nome completo:</label><input type="text" id="edit-nome"></div>
+            <div class="modal-campo"><label>Endereço:</label><input type="text" id="edit-endereco"></div>
+            <div class="modal-campo"><label>Número:</label><input type="text" id="edit-numero"></div>
+            <div class="modal-campo"><label>Complemento:</label><input type="text" id="edit-complemento"></div>
+            <div class="modal-campo"><label>Bairro:</label><input type="text" id="edit-bairro"></div>
+            <div class="modal-campo"><label>Cidade:</label><input type="text" id="edit-cidade"></div>
+            <div class="modal-campo"><label>Estado:</label><input type="text" id="edit-estado"></div>
+            <div class="modal-campo"><label>CEP:</label><input type="text" id="edit-cep"></div>
+            <div class="modal-campo"><label>E-mail:</label><input type="text" id="edit-email"></div>
+            <div class="modal-campo"><label>Tel. Particular:</label><input type="text" id="edit-telParticular"></div>
+            <div class="modal-campo"><label>Tel. Empresa:</label><input type="text" id="edit-telEmpresa"></div>
+            <div class="modal-campo"><label>Tel. Fixo:</label><input type="text" id="edit-telFixo"></div>
+            <div class="modal-campo"><label>CPF:</label><input type="text" id="edit-cpf"></div>
+            <div class="modal-campo"><label>CNPJ:</label><input type="text" id="edit-cnpj"></div>
+            <div class="modal-campo"><label>Data de entrada:</label><input type="date" id="edit-entrada"></div>
+            <div class="modal-campo"><label>Data de saída:</label><input type="date" id="edit-saida"></div>
+            <div class="modal-botoes">
+                <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+                <button class="btn-salvar-edicao" onclick="salvarEdicao()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="pagina-consulta">
+        <div class="card-consulta">
+
+            <div class="titulo-consulta">HÓSPEDES REGISTRADOS</div>
+
+            <table class="tabela">
+                <thead>
+                    <tr>
+                        <th>NOME DO CLIENTE</th>
+                        <th>ENTRADA</th>
+                        <th>SAÍDA</th>
+                        <th>AÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody id="lista-hospedes">
+                    <tr>
+                        <td colspan="4" class="sem-registros">Nenhum hóspede registrado.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <a href="index.html" class="link-voltar">Voltar para o Início</a>
+
+        </div>
+    </div>
+
+    <script>
+        let indiceEditando = null;
+
+        function carregarHospedes() {
+            const lista = JSON.parse(localStorage.getItem('hospedes') || '[]');
+            const tbody = document.getElementById('lista-hospedes');
+
+            if (lista.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="sem-registros">Nenhum hóspede registrado.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = lista.map((h, index) => `
+                <tr>
+                    <td>${h.nome}</td>
+                    <td>${h.entrada || '-'}</td>
+                    <td>${h.saida || '-'}</td>
+                    <td>
+                        <button class="btn-imprimir" onclick="imprimirHospede(${index})">Imprimir</button>
+                        <button class="btn-editar" onclick="abrirModal(${index})">Editar</button>
+                        <button class="btn-excluir" onclick="excluir(${index})">Excluir</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function imprimirHospede(index) {
+            const lista = JSON.parse(localStorage.getItem('hospedes') || '[]');
+            const h = lista[index];
+
+            document.getElementById('p-nome').textContent          = h.nome || '-';
+            document.getElementById('p-endereco').textContent      = h.endereco || '-';
+            document.getElementById('p-numero').textContent        = h.numero || '-';
+            document.getElementById('p-complemento').textContent   = h.complemento || '-';
+            document.getElementById('p-bairro').textContent        = h.bairro || '-';
+            document.getElementById('p-cidade').textContent        = h.cidade || '-';
+            document.getElementById('p-estado').textContent        = h.estado || '-';
+            document.getElementById('p-cep').textContent           = h.cep || '-';
+            document.getElementById('p-email').textContent         = h.email || '-';
+            document.getElementById('p-telParticular').textContent = h.telParticular || '-';
+            document.getElementById('p-telEmpresa').textContent    = h.telEmpresa || '-';
+            document.getElementById('p-telFixo').textContent       = h.telFixo || '-';
+            document.getElementById('p-cpf').textContent           = h.cpf || '-';
+            document.getElementById('p-cnpj').textContent          = h.cnpj || '-';
+            document.getElementById('p-entrada').textContent       = h.entrada || '-';
+            document.getElementById('p-saida').textContent         = h.saida || '-';
+
+            window.print();
+        }
+
+        function abrirModal(index) {
+            const lista = JSON.parse(localStorage.getItem('hospedes') || '[]');
+            const h = lista[index];
+            indiceEditando = index;
+
+            document.getElementById('edit-nome').value          = h.nome || '';
+            document.getElementById('edit-endereco').value      = h.endereco || '';
+            document.getElementById('edit-numero').value        = h.numero || '';
+            document.getElementById('edit-complemento').value   = h.complemento || '';
+            document.getElementById('edit-bairro').value        = h.bairro || '';
+            document.getElementById('edit-cidade').value        = h.cidade || '';
+            document.getElementById('edit-estado').value        = h.estado || '';
+            document.getElementById('edit-cep').value           = h.cep || '';
+            document.getElementById('edit-email').value         = h.email || '';
+            document.getElementById('edit-telParticular').value = h.telParticular || '';
+            document.getElementById('edit-telEmpresa').value    = h.telEmpresa || '';
+            document.getElementById('edit-telFixo').value       = h.telFixo || '';
+            document.getElementById('edit-cpf').value           = h.cpf || '';
+            document.getElementById('edit-cnpj').value          = h.cnpj || '';
+            document.getElementById('edit-entrada').value       = h.entrada || '';
+            document.getElementById('edit-saida').value         = h.saida || '';
+
+            document.getElementById('modal-overlay').classList.add('ativo');
+        }
+
+        function fecharModal() {
+            document.getElementById('modal-overlay').classList.remove('ativo');
+            indiceEditando = null;
+        }
+
+        function salvarEdicao() {
+            const lista = JSON.parse(localStorage.getItem('hospedes') || '[]');
+
+            lista[indiceEditando] = {
+                nome:          document.getElementById('edit-nome').value,
+                endereco:      document.getElementById('edit-endereco').value,
+                numero:        document.getElementById('edit-numero').value,
+                complemento:   document.getElementById('edit-complemento').value,
+                bairro:        document.getElementById('edit-bairro').value,
+                cidade:        document.getElementById('edit-cidade').value,
+                estado:        document.getElementById('edit-estado').value,
+                cep:           document.getElementById('edit-cep').value,
+                email:         document.getElementById('edit-email').value,
+                telParticular: document.getElementById('edit-telParticular').value,
+                telEmpresa:    document.getElementById('edit-telEmpresa').value,
+                telFixo:       document.getElementById('edit-telFixo').value,
+                cpf:           document.getElementById('edit-cpf').value,
+                cnpj:          document.getElementById('edit-cnpj').value,
+                entrada:       document.getElementById('edit-entrada').value,
+                saida:         document.getElementById('edit-saida').value,
+            };
+
+            localStorage.setItem('hospedes', JSON.stringify(lista));
+            fecharModal();
+            carregarHospedes();
+        }
+
+        function excluir(index) {
+            if (!confirm('Tem certeza que deseja excluir este hóspede?')) return;
+            const lista = JSON.parse(localStorage.getItem('hospedes') || '[]');
+            lista.splice(index, 1);
+            localStorage.setItem('hospedes', JSON.stringify(lista));
+            carregarHospedes();
+        }
+
+        carregarHospedes();
+    </script>
+
+</body>
+</html>
