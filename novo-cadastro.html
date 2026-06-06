@@ -114,8 +114,24 @@
 
     </div>
 
-    <script>
-        function salvarCadastro() {
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+        import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCJNiOeVL8vzyq6jJg-V0CCbJ508FsAn_E",
+            authDomain: "hospedagem-hotel-b84c6.firebaseapp.com",
+            projectId: "hospedagem-hotel-b84c6",
+            storageBucket: "hospedagem-hotel-b84c6.firebasestorage.app",
+            messagingSenderId: "162252383417",
+            appId: "1:162252383417:web:e91a0c098a15c39eb62768",
+            measurementId: "G-9FBWZCQLLG"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.salvarCadastro = async function() {
             const nome = document.getElementById('nome').value;
 
             if (!nome) {
@@ -125,35 +141,37 @@
 
             const hospede = {
                 nome,
-                endereco:     document.getElementById('endereco').value,
-                numero:       document.getElementById('numero').value,
-                complemento:  document.getElementById('complemento').value,
-                bairro:       document.getElementById('bairro').value,
-                cidade:       document.getElementById('cidade').value,
-                estado:       document.getElementById('estado').value,
-                cep:          document.getElementById('cep').value,
-                email:        document.getElementById('email').value,
-                telParticular:document.getElementById('telParticular').value,
-                telEmpresa:   document.getElementById('telEmpresa').value,
-                telFixo:      document.getElementById('telFixo').value,
-                cpf:          document.getElementById('cpf').value,
-                cnpj:         document.getElementById('cnpj').value,
-                entrada:      document.getElementById('entrada').value,
-                saida:        document.getElementById('saida').value,
+                endereco:      document.getElementById('endereco').value,
+                numero:        document.getElementById('numero').value,
+                complemento:   document.getElementById('complemento').value,
+                bairro:        document.getElementById('bairro').value,
+                cidade:        document.getElementById('cidade').value,
+                estado:        document.getElementById('estado').value,
+                cep:           document.getElementById('cep').value,
+                email:         document.getElementById('email').value,
+                telParticular: document.getElementById('telParticular').value,
+                telEmpresa:    document.getElementById('telEmpresa').value,
+                telFixo:       document.getElementById('telFixo').value,
+                cpf:           document.getElementById('cpf').value,
+                cnpj:          document.getElementById('cnpj').value,
+                entrada:       document.getElementById('entrada').value,
+                saida:         document.getElementById('saida').value,
+                criadoEm:      new Date().toISOString()
             };
 
-            const lista = JSON.parse(localStorage.getItem('hospedes') || '[]');
-            lista.push(hospede);
-            localStorage.setItem('hospedes', JSON.stringify(lista));
+            try {
+                await addDoc(collection(db, 'hospedes'), hospede);
 
-            // Mostra mensagem de sucesso
-            const mensagem = document.getElementById('mensagem');
-            mensagem.style.display = 'block';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            setTimeout(() => { mensagem.style.display = 'none'; }, 4000);
+                const mensagem = document.getElementById('mensagem');
+                mensagem.style.display = 'block';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                setTimeout(() => { mensagem.style.display = 'none'; }, 4000);
 
-            // Limpa os campos
-            document.querySelectorAll('input').forEach(input => input.value = '');
+                document.querySelectorAll('input').forEach(input => input.value = '');
+
+            } catch (error) {
+                alert('Erro ao salvar: ' + error.message);
+            }
         }
     </script>
 

@@ -6,13 +6,13 @@
     <link rel="stylesheet" href="style.css">
     <style>
         .pagina-consulta {
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 40px 20px;
-    box-sizing: border-box;
-}
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+            box-sizing: border-box;
+        }
 
         .card-consulta {
             background-color: #001f3d;
@@ -252,11 +252,10 @@
             }
         }
 
-      body {
-    height: auto !important;
-    overflow-y: auto !important;
-}
-
+        body {
+            height: auto !important;
+            overflow-y: auto !important;
+        }
     </style>
 </head>
 <body>
@@ -337,7 +336,7 @@
                 </thead>
                 <tbody id="lista-hospedes">
                     <tr>
-                        <td colspan="4" class="sem-registros">Nenhum hóspede registrado.</td>
+                        <td colspan="4" class="sem-registros">Carregando...</td>
                     </tr>
                 </tbody>
             </table>
@@ -347,36 +346,60 @@
         </div>
     </div>
 
-    <script>
-        let indiceEditando = null;
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+        import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-        function carregarHospedes() {
-            const lista = JSON.parse(localStorage.getItem('hospedes') || '[]');
+        const firebaseConfig = {
+            apiKey: "AIzaSyCJNiOeVL8vzyq6jJg-V0CCbJ508FsAn_E",
+            authDomain: "hospedagem-hotel-b84c6.firebaseapp.com",
+            projectId: "hospedagem-hotel-b84c6",
+            storageBucket: "hospedagem-hotel-b84c6.firebasestorage.app",
+            messagingSenderId: "162252383417",
+            appId: "1:162252383417:web:e91a0c098a15c39eb62768",
+            measurementId: "G-9FBWZCQLLG"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let hospedes = [];
+        let idEditando = null;
+
+        async function carregarHospedes() {
             const tbody = document.getElementById('lista-hospedes');
+            try {
+                const snapshot = await getDocs(collection(db, 'hospedes'));
+                hospedes = [];
+                snapshot.forEach(docSnap => {
+                    hospedes.push({ id: docSnap.id, ...docSnap.data() });
+                });
 
-            if (lista.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="sem-registros">Nenhum hóspede registrado.</td></tr>';
-                return;
+                if (hospedes.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="sem-registros">Nenhum hóspede registrado.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = hospedes.map((h, index) => `
+                    <tr>
+                        <td>${h.nome}</td>
+                        <td>${h.entrada || '-'}</td>
+                        <td>${h.saida || '-'}</td>
+                        <td>
+                            <button class="btn-imprimir" onclick="window.imprimirHospede(${index})">Imprimir</button>
+                            <button class="btn-editar" onclick="window.abrirModal(${index})">Editar</button>
+                            <button class="btn-excluir" onclick="window.excluir('${h.id}')">Excluir</button>
+                        </td>
+                    </tr>
+                `).join('');
+
+            } catch (error) {
+                tbody.innerHTML = '<tr><td colspan="4" class="sem-registros">Erro ao carregar dados.</td></tr>';
             }
-
-            tbody.innerHTML = lista.map((h, index) => `
-                <tr>
-                    <td>${h.nome}</td>
-                    <td>${h.entrada || '-'}</td>
-                    <td>${h.saida || '-'}</td>
-                    <td>
-                        <button class="btn-imprimir" onclick="imprimirHospede(${index})">Imprimir</button>
-                        <button class="btn-editar" onclick="abrirModal(${index})">Editar</button>
-                        <button class="btn-excluir" onclick="excluir(${index})">Excluir</button>
-                    </td>
-                </tr>
-            `).join('');
         }
 
-        function imprimirHospede(index) {
-            const lista = JSON.parse(localStorage.getItem('hospedes') || '[]');
-            const h = lista[index];
-
+        window.imprimirHospede = function(index) {
+            const h = hospedes[index];
             document.getElementById('p-nome').textContent          = h.nome || '-';
             document.getElementById('p-endereco').textContent      = h.endereco || '-';
             document.getElementById('p-numero').textContent        = h.numero || '-';
@@ -393,14 +416,12 @@
             document.getElementById('p-cnpj').textContent          = h.cnpj || '-';
             document.getElementById('p-entrada').textContent       = h.entrada || '-';
             document.getElementById('p-saida').textContent         = h.saida || '-';
-
             window.print();
         }
 
-        function abrirModal(index) {
-            const lista = JSON.parse(localStorage.getItem('hospedes') || '[]');
-            const h = lista[index];
-            indiceEditando = index;
+        window.abrirModal = function(index) {
+            const h = hospedes[index];
+            idEditando = h.id;
 
             document.getElementById('edit-nome').value          = h.nome || '';
             document.getElementById('edit-endereco').value      = h.endereco || '';
@@ -422,44 +443,46 @@
             document.getElementById('modal-overlay').classList.add('ativo');
         }
 
-        function fecharModal() {
+        window.fecharModal = function() {
             document.getElementById('modal-overlay').classList.remove('ativo');
-            indiceEditando = null;
+            idEditando = null;
         }
 
-        function salvarEdicao() {
-            const lista = JSON.parse(localStorage.getItem('hospedes') || '[]');
-
-            lista[indiceEditando] = {
-                nome:          document.getElementById('edit-nome').value,
-                endereco:      document.getElementById('edit-endereco').value,
-                numero:        document.getElementById('edit-numero').value,
-                complemento:   document.getElementById('edit-complemento').value,
-                bairro:        document.getElementById('edit-bairro').value,
-                cidade:        document.getElementById('edit-cidade').value,
-                estado:        document.getElementById('edit-estado').value,
-                cep:           document.getElementById('edit-cep').value,
-                email:         document.getElementById('edit-email').value,
-                telParticular: document.getElementById('edit-telParticular').value,
-                telEmpresa:    document.getElementById('edit-telEmpresa').value,
-                telFixo:       document.getElementById('edit-telFixo').value,
-                cpf:           document.getElementById('edit-cpf').value,
-                cnpj:          document.getElementById('edit-cnpj').value,
-                entrada:       document.getElementById('edit-entrada').value,
-                saida:         document.getElementById('edit-saida').value,
-            };
-
-            localStorage.setItem('hospedes', JSON.stringify(lista));
-            fecharModal();
-            carregarHospedes();
+        window.salvarEdicao = async function() {
+            try {
+                await updateDoc(doc(db, 'hospedes', idEditando), {
+                    nome:          document.getElementById('edit-nome').value,
+                    endereco:      document.getElementById('edit-endereco').value,
+                    numero:        document.getElementById('edit-numero').value,
+                    complemento:   document.getElementById('edit-complemento').value,
+                    bairro:        document.getElementById('edit-bairro').value,
+                    cidade:        document.getElementById('edit-cidade').value,
+                    estado:        document.getElementById('edit-estado').value,
+                    cep:           document.getElementById('edit-cep').value,
+                    email:         document.getElementById('edit-email').value,
+                    telParticular: document.getElementById('edit-telParticular').value,
+                    telEmpresa:    document.getElementById('edit-telEmpresa').value,
+                    telFixo:       document.getElementById('edit-telFixo').value,
+                    cpf:           document.getElementById('edit-cpf').value,
+                    cnpj:          document.getElementById('edit-cnpj').value,
+                    entrada:       document.getElementById('edit-entrada').value,
+                    saida:         document.getElementById('edit-saida').value,
+                });
+                window.fecharModal();
+                await carregarHospedes();
+            } catch (error) {
+                alert('Erro ao salvar: ' + error.message);
+            }
         }
 
-        function excluir(index) {
+        window.excluir = async function(id) {
             if (!confirm('Tem certeza que deseja excluir este hóspede?')) return;
-            const lista = JSON.parse(localStorage.getItem('hospedes') || '[]');
-            lista.splice(index, 1);
-            localStorage.setItem('hospedes', JSON.stringify(lista));
-            carregarHospedes();
+            try {
+                await deleteDoc(doc(db, 'hospedes', id));
+                await carregarHospedes();
+            } catch (error) {
+                alert('Erro ao excluir: ' + error.message);
+            }
         }
 
         carregarHospedes();
