@@ -346,22 +346,12 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-        import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCJNiOeVL8vzyq6jJg-V0CCbJ508FsAn_E",
-            authDomain: "hospedagem-hotel-b84c6.firebaseapp.com",
-            projectId: "hospedagem-hotel-b84c6",
-            storageBucket: "hospedagem-hotel-b84c6.firebasestorage.app",
-            messagingSenderId: "162252383417",
-            appId: "1:162252383417:web:e91a0c098a15c39eb62768",
-            measurementId: "G-9FBWZCQLLG"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+    <script>
+        // Endpoints PHP que conversam com o MySQL.
+        // Precisam estar na mesma pasta deste arquivo, rodando via XAMPP/Apache.
+        const URL_LISTAR  = 'listar.php';
+        const URL_EDITAR  = 'editar.php';
+        const URL_EXCLUIR = 'excluir.php';
 
         let hospedes = [];
         let idEditando = null;
@@ -369,11 +359,14 @@
         async function carregarHospedes() {
             const tbody = document.getElementById('lista-hospedes');
             try {
-                const snapshot = await getDocs(collection(db, 'hospedes'));
-                hospedes = [];
-                snapshot.forEach(docSnap => {
-                    hospedes.push({ id: docSnap.id, ...docSnap.data() });
-                });
+                const resposta = await fetch(URL_LISTAR);
+                const dados = await resposta.json();
+
+                if (!resposta.ok || dados.erro) {
+                    throw new Error(dados.erro || 'Erro ao carregar dados.');
+                }
+
+                hospedes = dados;
 
                 if (hospedes.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="4" class="sem-registros">Nenhum hóspede registrado.</td></tr>';
@@ -388,13 +381,14 @@
                         <td>
                             <button class="btn-imprimir" onclick="window.imprimirHospede(${index})">Imprimir</button>
                             <button class="btn-editar" onclick="window.abrirModal(${index})">Editar</button>
-                            <button class="btn-excluir" onclick="window.excluir('${h.id}')">Excluir</button>
+                            <button class="btn-excluir" onclick="window.excluir(${h.id})">Excluir</button>
                         </td>
                     </tr>
                 `).join('');
 
             } catch (error) {
                 tbody.innerHTML = '<tr><td colspan="4" class="sem-registros">Erro ao carregar dados.</td></tr>';
+                console.error(error);
             }
         }
 
@@ -450,7 +444,8 @@
 
         window.salvarEdicao = async function() {
             try {
-                await updateDoc(doc(db, 'hospedes', idEditando), {
+                const dadosEditados = {
+                    id:            idEditando,
                     nome:          document.getElementById('edit-nome').value,
                     endereco:      document.getElementById('edit-endereco').value,
                     numero:        document.getElementById('edit-numero').value,
@@ -467,7 +462,20 @@
                     cnpj:          document.getElementById('edit-cnpj').value,
                     entrada:       document.getElementById('edit-entrada').value,
                     saida:         document.getElementById('edit-saida').value,
+                };
+
+                const resposta = await fetch(URL_EDITAR, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dadosEditados)
                 });
+
+                const resultado = await resposta.json();
+
+                if (!resposta.ok || resultado.erro) {
+                    throw new Error(resultado.erro || 'Erro ao salvar edição.');
+                }
+
                 window.fecharModal();
                 await carregarHospedes();
             } catch (error) {
@@ -478,7 +486,18 @@
         window.excluir = async function(id) {
             if (!confirm('Tem certeza que deseja excluir este hóspede?')) return;
             try {
-                await deleteDoc(doc(db, 'hospedes', id));
+                const resposta = await fetch(URL_EXCLUIR, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+
+                const resultado = await resposta.json();
+
+                if (!resposta.ok || resultado.erro) {
+                    throw new Error(resultado.erro || 'Erro ao excluir.');
+                }
+
                 await carregarHospedes();
             } catch (error) {
                 alert('Erro ao excluir: ' + error.message);
