@@ -114,24 +114,12 @@
 
     </div>
 
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-        import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    <script>
+        // URL do backend PHP. Se o site estiver na mesma pasta do salvar.php,
+        // pode deixar assim mesmo. Se mudar de lugar, ajuste o caminho.
+        const API_URL = 'salvar.php';
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCJNiOeVL8vzyq6jJg-V0CCbJ508FsAn_E",
-            authDomain: "hospedagem-hotel-b84c6.firebaseapp.com",
-            projectId: "hospedagem-hotel-b84c6",
-            storageBucket: "hospedagem-hotel-b84c6.firebasestorage.app",
-            messagingSenderId: "162252383417",
-            appId: "1:162252383417:web:e91a0c098a15c39eb62768",
-            measurementId: "G-9FBWZCQLLG"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        window.salvarCadastro = async function() {
+        async function salvarCadastro() {
             const nome = document.getElementById('nome').value;
 
             if (!nome) {
@@ -155,12 +143,21 @@
                 cpf:           document.getElementById('cpf').value,
                 cnpj:          document.getElementById('cnpj').value,
                 entrada:       document.getElementById('entrada').value,
-                saida:         document.getElementById('saida').value,
-                criadoEm:      new Date().toISOString()
+                saida:         document.getElementById('saida').value
             };
 
             try {
-                await addDoc(collection(db, 'hospedes'), hospede);
+                const resposta = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(hospede)
+                });
+
+                const resultado = await resposta.json();
+
+                if (!resposta.ok || resultado.erro) {
+                    throw new Error(resultado.erro || 'Erro desconhecido ao salvar.');
+                }
 
                 const mensagem = document.getElementById('mensagem');
                 mensagem.style.display = 'block';
